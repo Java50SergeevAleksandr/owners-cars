@@ -13,5 +13,10 @@ public class CarsExceptionsController {
 	ResponseEntity<String> notFoundHandler(NotFoundException e) {
 		return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
 	}
+
 //TODO Exception handler for IllegalStateException returning response with status BAD_REQUEST (code 400) and body containing error message
+	@ExceptionHandler(IllegalStateException.class)
+	ResponseEntity<String> illegalStateHandler(IllegalStateException e) {
+		return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+	}
 }

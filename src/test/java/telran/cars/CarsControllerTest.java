@@ -29,6 +29,9 @@ class CarsControllerTest {
 	private static final long PERSON_ID = 123l;
 	private static final String CAR_NUMBER = "123-01-002";
 	private static final String PERSON_NOT_FOUND_MESSAGE = "person not found message";
+	private static final String CAR_NOT_FOUND_MESSAGE = "car not found message";
+	private static final String CAR_ALREADY_EXISTS_MESSAGE = "car already exists message";
+	private static final String PERSON_ALREADY_EXISTS_MESSAGE = "person already exists message";
 	@MockBean // inserting into Application Context Mock instead of real Service
 				// implementation
 	CarsService carsService;
@@ -137,4 +140,41 @@ class CarsControllerTest {
 
 	}
 
+	@Test
+	void testGetPersonNotFound() throws Exception {
+		when(carsService.getCarOwner(CAR_NUMBER)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));
+		String actualJSON = mockMvc.perform(get("http://localhost:8080/cars/" + CAR_NUMBER))
+				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+		assertEquals(PERSON_NOT_FOUND_MESSAGE, actualJSON);
+	}
+
+	@Test
+	void testDeleteCarNotFound() throws Exception {
+		when(carsService.deleteCar(CAR_NUMBER)).thenThrow(new NotFoundException(CAR_NOT_FOUND_MESSAGE));
+		String actualJSON = mockMvc.perform(delete("http://localhost:8080/cars/" + CAR_NUMBER))
+				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+		assertEquals(CAR_NOT_FOUND_MESSAGE, actualJSON);
+	}
+
+	@Test
+	void testAddCarAlreadyExists() throws Exception {
+		String jsonExpected = mapper.writeValueAsString(carDto);
+		when(carsService.addCar(carDto)).thenThrow(new IllegalStateException(CAR_ALREADY_EXISTS_MESSAGE));
+		String actualJSON = mockMvc
+				.perform(post("http://localhost:8080/cars").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonExpected))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		assertEquals(CAR_ALREADY_EXISTS_MESSAGE, actualJSON);
+	}
+
+	@Test
+	void testAddPersonAlreadyExists() throws Exception {
+		String jsonExpected = mapper.writeValueAsString(personDto);
+		when(carsService.addPerson(personDto)).thenThrow(new IllegalStateException(PERSON_ALREADY_EXISTS_MESSAGE));
+		String actualJSON = mockMvc
+				.perform(post("http://localhost:8080/cars/person").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonExpected))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		assertEquals(PERSON_ALREADY_EXISTS_MESSAGE, actualJSON);
+	}
 }

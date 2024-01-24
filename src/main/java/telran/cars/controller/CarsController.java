@@ -51,7 +51,7 @@ public class CarsController {
 	}
 
 	@GetMapping("{carNumber}")
-	PersonDto getCarOwner(@PathVariable String carNumber) {
+	PersonDto getCarOwner(@PathVariable(name = "carNumber") String carNumber) {
 		return carsService.getCarOwner(carNumber);
 	}
 }
