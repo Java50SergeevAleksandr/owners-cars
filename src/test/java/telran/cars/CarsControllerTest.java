@@ -134,26 +134,35 @@ class CarsControllerTest {
 	void testDeletePersonNotFound() throws Exception {
 		when(carsService.deletePerson(PERSON_ID)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));
 
-		String actualJSON = mockMvc.perform(delete("http://localhost:8080/cars/person/" + PERSON_ID))
+		String rsponse = mockMvc.perform(delete("http://localhost:8080/cars/person/" + PERSON_ID))
 				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
-		assertEquals(PERSON_NOT_FOUND_MESSAGE, actualJSON);
+		assertEquals(PERSON_NOT_FOUND_MESSAGE, rsponse);
 
 	}
 
 	@Test
-	void testGetPersonNotFound() throws Exception {
+	void testGetCarOwnerNotFound() throws Exception {
 		when(carsService.getCarOwner(CAR_NUMBER)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));
-		String actualJSON = mockMvc.perform(get("http://localhost:8080/cars/" + CAR_NUMBER))
+		String response = mockMvc.perform(get("http://localhost:8080/cars/" + CAR_NUMBER))
 				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
-		assertEquals(PERSON_NOT_FOUND_MESSAGE, actualJSON);
+		assertEquals(PERSON_NOT_FOUND_MESSAGE, response);
+	}
+
+	@Test
+	void testGetOwnerCarsPersonNotFound() throws Exception {
+
+		when(carsService.getOwnerCars(PERSON_ID)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));
+		String response = mockMvc.perform(get("http://localhost:8080/cars/person/" + PERSON_ID))
+				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+		assertEquals(PERSON_NOT_FOUND_MESSAGE, response);
 	}
 
 	@Test
 	void testDeleteCarNotFound() throws Exception {
 		when(carsService.deleteCar(CAR_NUMBER)).thenThrow(new NotFoundException(CAR_NOT_FOUND_MESSAGE));
-		String actualJSON = mockMvc.perform(delete("http://localhost:8080/cars/" + CAR_NUMBER))
+		String response = mockMvc.perform(delete("http://localhost:8080/cars/" + CAR_NUMBER))
 				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
-		assertEquals(CAR_NOT_FOUND_MESSAGE, actualJSON);
+		assertEquals(CAR_NOT_FOUND_MESSAGE, response);
 	}
 
 	@Test
@@ -176,5 +185,37 @@ class CarsControllerTest {
 						.content(jsonExpected))
 				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
 		assertEquals(PERSON_ALREADY_EXISTS_MESSAGE, actualJSON);
+	}
+
+	@Test
+	void testUpdatePersonNotFound() throws Exception {
+		when(carsService.updatePerson(personDtoUpdated)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));
+		String jsonPersonDtoUpdated = mapper.writeValueAsString(personDtoUpdated); // conversion from carDto object to
+																					// string JSON
+		String response = mockMvc
+				.perform(put("http://localhost:8080/cars/person").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonPersonDtoUpdated))
+				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+		assertEquals(PERSON_NOT_FOUND_MESSAGE, response);
+	}
+
+	@Test
+	void testPurchaseCarNotFound() throws Exception {
+		testPurchaseNotFound(CAR_NOT_FOUND_MESSAGE);
+	}
+
+	@Test
+	void testPurchasePersonNotFound() throws Exception {
+		testPurchaseNotFound(PERSON_NOT_FOUND_MESSAGE);
+	}
+
+	private void testPurchaseNotFound(String message) throws Exception {
+		when(carsService.purchase(tradeDeal)).thenThrow(new NotFoundException(message));
+		String jsonTradeDeal = mapper.writeValueAsString(tradeDeal);
+		String response = mockMvc
+				.perform(put("http://localhost:8080/cars/trade").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonTradeDeal))
+				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+		assertEquals(message, response);
 	}
 }
