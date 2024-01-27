@@ -1,6 +1,7 @@
 package telran.cars;
 
 import static org.junit.jupiter.api.Assertions.*;
+
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,7 +22,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import telran.cars.dto.*;
 import static telran.cars.api.ValidationConstants.*;
 import telran.cars.exceptions.NotFoundException;
+import telran.cars.exceptions.controller.CarsExceptionsController;
 import telran.cars.service.CarsService;
+
+//record for mismatch type test
+record PersonDtoIdString(String id, String name, String birthDate, String email) {
+
+}
 
 @WebMvcTest // inserting into Application Context Mock WEB server instead of real WebServer
 class CarsControllerTest {
@@ -33,7 +40,9 @@ class CarsControllerTest {
 	private static final String CAR_NOT_FOUND_MESSAGE = "car not found";
 	static final String WRONG_EMAIL_ADDRESS = "kuku";
 	static final String EMAIL_ADDRESS = "vasya@gmail.com";
-	private static final Long WRONG_PERSON_ID = 123l;
+	private static final long WRONG_PERSON_ID = 123L;
+	static final String WRONG_PERSON_ID_TYPE = "abc";
+	static final String WRONG_CAR_NUMBER = "kikuk";
 	@MockBean // inserting into Application Context Mock instead of real Service
 				// implementation
 	CarsService carsService;
@@ -41,6 +50,7 @@ class CarsControllerTest {
 	MockMvc mockMvc;
 	CarDto carDto = new CarDto(CAR_NUMBER, "model");
 	CarDto carDto1 = new CarDto("car123", "mode123");
+	CarDto carDtoMissingFields = new CarDto(null, null);
 
 	@Autowired // for injection of ObjectMapper from Application context
 	ObjectMapper mapper; // object for getting JSON from object and object from JSON
@@ -48,9 +58,17 @@ class CarsControllerTest {
 	PersonDto personDtoUpdated = new PersonDto(PERSON_ID, "Vasya", "2000-10-10", "vasya@tel-ran.com");
 	PersonDto personWrongEmail = new PersonDto(PERSON_ID, "Vasya", "2000-10-10", WRONG_EMAIL_ADDRESS);
 	PersonDto personNoId = new PersonDto(null, "Vasya", "2000-10-10", EMAIL_ADDRESS);
-	PersonDto personWrongId = new PersonDto(123l, "Vasya", "2000-10-10", EMAIL_ADDRESS);
-
+	PersonDto personWrongId = new PersonDto(100000000000l, "Vasya", "2000-10-10", EMAIL_ADDRESS);
+	PersonDto personWrongBirthdate = new PersonDto(PERSON_ID, "Vasya", "2000-10", EMAIL_ADDRESS);
 	TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER, PERSON_ID);
+	PersonDtoIdString personDtoWrongIdType = new PersonDtoIdString("abc", "Vasya", "2000-10-10", EMAIL_ADDRESS);
+	PersonDto personAllFieldsMissing = new PersonDto(null, null, null, null);
+	TradeDealDto tradeDealWrongCarNumber = new TradeDealDto(WRONG_CAR_NUMBER, PERSON_ID);
+	TradeDealDto tradeDealWrongId = new TradeDealDto(CAR_NUMBER, -10l);
+	TradeDealDto tradeDealAllFieldsMissing = new TradeDealDto(null, null);
+	private String[] expectedCarMissingFieldsMessages = { MISSING_CAR_MODEL_MESSAGE, MISSING_CAR_NUMBER_MESSAGE };
+	private String[] expectedPersonMissingFieldsMessages = { MISSING_BIRTH_DATE_MESSAGE, MISSING_PERSON_EMAIL,
+			MISSING_PERSON_ID_MESSAGE, MISSING_PERSON_NAME_MESSAGE };
 
 	@Test
 	void testAddCar() throws Exception {
@@ -140,9 +158,9 @@ class CarsControllerTest {
 	void testDeletePersonNotFound() throws Exception {
 		when(carsService.deletePerson(PERSON_ID)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));
 
-		String response = mockMvc.perform(delete("http://localhost:8080/cars/person/" + PERSON_ID))
+		String actualJSON = mockMvc.perform(delete("http://localhost:8080/cars/person/" + PERSON_ID))
 				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
-		assertEquals(PERSON_NOT_FOUND_MESSAGE, response);
+		assertEquals(PERSON_NOT_FOUND_MESSAGE, actualJSON);
 
 	}
 
@@ -230,13 +248,33 @@ class CarsControllerTest {
 	/* Alternative flows - Validation exceptions handling ***********************/
 	@Test
 	void addPersonWrongEmailTest() throws Exception {
-		String jsonPersonDto = mapper.writeValueAsString(personWrongEmail); // conversion from carDto object to string
-																			// JSON
-		String response = mockMvc
-				.perform(post("http://localhost:8080/cars/person").contentType(MediaType.APPLICATION_JSON)
-						.content(jsonPersonDto))
-				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
-		assertEquals(WRONG_EMAIL_FORMAT, response);
+		wrongPersonDataRequest(personWrongEmail, WRONG_EMAIL_FORMAT);
+	}
+
+	@Test
+	void addPersonWrongBirthDateTest() throws Exception {
+		wrongPersonDataRequest(personWrongBirthdate, WRONG_DATE_FORMAT);
+	}
+
+	@Test
+	void addPersonWrongIdTest() throws Exception {
+		wrongPersonDataRequest(personWrongId, WRONG_MAX_PERSON_ID_VALUE);
+
+	}
+
+	@Test
+	void addPersonWrongIdTypeTest() throws Exception {
+		wrongPersonDataRequest(personDtoWrongIdType, CarsExceptionsController.JSON_TYPE_MISMATCH_MESSAGE);
+	}
+
+	@Test
+	void purchaseWrongCarNumberTest() throws Exception {
+		purchaseWrongData(tradeDealWrongCarNumber, WRONG_CAR_NUMBER_MESSAGE);
+	}
+
+	@Test
+	void purchaseWrongPersonIdTest() throws Exception {
+		purchaseWrongData(tradeDealWrongId, WRONG_MIN_PERSON_ID_VALUE);
 	}
 
 	@Test
@@ -247,9 +285,64 @@ class CarsControllerTest {
 	}
 
 	@Test
-	void deletePersonMissIdTest() throws Exception {		
-		String response = mockMvc.perform(delete("http://localhost:8080/cars/person/" ))
+	void deleteCarWrongCarNumber() throws Exception {
+		String response = mockMvc.perform(delete("http://localhost:8080/cars/" + WRONG_CAR_NUMBER))
 				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
-		assertEquals(MISSING_PERSON_ID_MESSAGE, response);
+		assertEquals(WRONG_CAR_NUMBER_MESSAGE, response);
 	}
+
+	@Test
+	void addCarMissingFields() throws Exception {
+		String jsonCarDto = mapper.writeValueAsString(carDtoMissingFields); // conversion from carDto object to string
+																			// JSON
+		String response = mockMvc
+				.perform(post("http://localhost:8080/cars").contentType(MediaType.APPLICATION_JSON).content(jsonCarDto))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		allFieldsMissingTest(expectedCarMissingFieldsMessages, response);
+	}
+
+	@Test
+	void addPersonMissingFields() throws Exception {
+		String jsonPersonDto = mapper.writeValueAsString(personAllFieldsMissing); // conversion from carDto object to
+																					// string JSON
+		String response = mockMvc
+				.perform(post("http://localhost:8080/cars/person").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonPersonDto))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		allFieldsMissingTest(expectedPersonMissingFieldsMessages, response);
+	}
+
+	private void allFieldsMissingTest(String[] expectedMessages, String response) {
+		Arrays.sort(expectedMessages);
+		String[] actualMessages = response.split(";");
+		Arrays.sort(actualMessages);
+		assertArrayEquals(expectedMessages, actualMessages);
+	}
+
+	private void wrongPersonDataRequest(Object personDtoWrongData, String expectedMessage) throws Exception {
+		String jsonPersonDto = mapper.writeValueAsString(personDtoWrongData); // conversion from carDto object to string
+																				// JSON
+		String response = mockMvc
+				.perform(post("http://localhost:8080/cars/person").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonPersonDto))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		assertEquals(expectedMessage, response);
+	}
+
+	private void purchaseWrongData(TradeDealDto tradeDeal, String expectedMessage) throws Exception {
+		String jsonTradeDeal = mapper.writeValueAsString(tradeDeal);
+		String response = mockMvc
+				.perform(put("http://localhost:8080/cars/trade").contentType(MediaType.APPLICATION_JSON)
+						.content(jsonTradeDeal))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		assertEquals(expectedMessage, response);
+	}
+
+	@Test
+	void testGetOwnerCarsMismatch() throws Exception {
+		String response = mockMvc.perform(get("http://localhost:8080/cars/person/" + WRONG_PERSON_ID_TYPE))
+				.andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString();
+		assertEquals(CarsExceptionsController.TYPE_MISMATCH_MESSAGE, response);
+	}
+
 }
