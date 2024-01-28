@@ -11,49 +11,56 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import lombok.extern.slf4j.Slf4j;
 import telran.cars.exceptions.NotFoundException;
 
 @ControllerAdvice
+@Slf4j
 public class CarsExceptionsController {
 
 	public static String TYPE_MISMATCH_MESSAGE = "URL parameter has type mismatch";
 	public static String JSON_TYPE_MISMATCH_MESSAGE = "JSON contains field with type mismatch";
 
+	private ResponseEntity<String> returnResponse(String message, HttpStatus status) {
+		log.error(message);
+		return new ResponseEntity<String>(message, status);
+	}
+
 	@ExceptionHandler(NotFoundException.class)
 	ResponseEntity<String> notFoundHandler(NotFoundException e) {
-		return new ResponseEntity<String>(e.getMessage(), HttpStatus.NOT_FOUND);
+		return returnResponse(e.getMessage(), HttpStatus.NOT_FOUND);
 	}
 
 	@ExceptionHandler(IllegalStateException.class)
 	ResponseEntity<String> illegalStateHandler(IllegalStateException e) {
-		return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		return returnResponse(e.getMessage(), HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ResponseEntity<String> methodArgumentNotValidHandler(MethodArgumentNotValidException e) {
 		String message = e.getAllErrors().stream().map(error -> error.getDefaultMessage())
 				.collect(Collectors.joining(";"));
-		return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+		return returnResponse(message, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(HandlerMethodValidationException.class)
 	ResponseEntity<String> methodValidationHandler(HandlerMethodValidationException e) {
 		String message = e.getAllErrors().stream().map(error -> error.getDefaultMessage())
 				.collect(Collectors.joining(";"));
-		return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+		return returnResponse(message, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	ResponseEntity<String> methodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
 		String message = TYPE_MISMATCH_MESSAGE;
 
-		return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+		return returnResponse(message, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	ResponseEntity<String> jsonFieldTypeMismatchException(HttpMessageNotReadableException e) {
 		String message = JSON_TYPE_MISMATCH_MESSAGE;
 
-		return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+		return returnResponse(message, HttpStatus.BAD_REQUEST);
 	}
 }
