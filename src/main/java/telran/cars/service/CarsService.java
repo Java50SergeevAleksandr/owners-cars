@@ -20,6 +20,4 @@ public interface CarsService {
 	List<CarDto> getOwnerCars(long id);
 
 	PersonDto getCarOwner(String carNumber);
-
-	void clearAll();
 }
