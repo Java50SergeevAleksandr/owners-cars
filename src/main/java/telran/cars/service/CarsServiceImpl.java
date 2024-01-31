@@ -2,6 +2,8 @@ package telran.cars.service;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -18,104 +20,133 @@ public class CarsServiceImpl implements CarsService {
 	HashMap<Long, CarOwner> owners = new HashMap<>();
 	HashMap<String, Car> cars = new HashMap<>();
 	HashMap<String, Integer> carsModelDealStatistic = new HashMap<>();
+	ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	Lock readLock = lock.readLock();
+	Lock writeLock = lock.writeLock();
 
 	@Override
 	public PersonDto addPerson(PersonDto personDto) {
-		log.debug("add person: received personDto {}", personDto);
-		long id = personDto.id();
-		CarOwner res = owners.putIfAbsent(id, new CarOwner(personDto));
-		if (res != null) {
-			throw new IllegalStateException(String.format("person %d already exists", id));
+		try {
+			writeLock.lock();
+			log.debug("add person: received personDto {}", personDto);
+			long id = personDto.id();
+			CarOwner res = owners.putIfAbsent(id, new CarOwner(personDto));
+			if (res != null) {
+				throw new IllegalStateException(String.format("person %d already exists", id));
+			}
+			return personDto;
+		} finally {
+			writeLock.unlock();
 		}
-		return personDto;
 
 	}
 
 	@Override
 	public CarDto addCar(CarDto carDto) {
-		log.debug("add car: received carDto {}", carDto);
-		String carNumber = carDto.number();
-		Car res = cars.putIfAbsent(carNumber, new Car(carDto));
-		if (res != null) {
-			throw new IllegalStateException(String.format("car %s already exists", carNumber));
+		try {
+			writeLock.lock();
+			log.debug("add car: received carDto {}", carDto);
+			String carNumber = carDto.number();
+			Car res = cars.putIfAbsent(carNumber, new Car(carDto));
+			if (res != null) {
+				throw new IllegalStateException(String.format("car %s already exists", carNumber));
+			}
+			return carDto;
+		} finally {
+			writeLock.unlock();
 		}
-		return carDto;
 	}
 
 	@Override
 	public PersonDto updatePerson(PersonDto personDto) {
-		log.debug("update person: received personDto {}", personDto);
-		long id = personDto.id();
-		CarOwner res = owners.computeIfPresent(id, (k, co) -> {
-			log.debug("person {}, old mail - {}, new mail - {}", id, co.getEmail(), personDto.email());
-			co.setEmail(personDto.email());
+		try {
+			writeLock.lock();
+			log.debug("update person: received personDto {}", personDto);
+			long id = personDto.id();
+			CarOwner res = owners.computeIfPresent(id, (k, co) -> {
+				log.debug("person {}, old mail - {}, new mail - {}", id, co.getEmail(), personDto.email());
+				co.setEmail(personDto.email());
 
-			return co;
-		});
-		if (res == null) {
-			throw new NotFoundException(String.format("person %d doesn't exists", id));
+				return co;
+			});
+			if (res == null) {
+				throw new NotFoundException(String.format("person %d doesn't exists", id));
+			}
+			return res.build();
+		} finally {
+			writeLock.unlock();
 		}
-		return res.build();
 	}
 
 	@Override
 	public PersonDto deletePerson(long id) {
-		log.debug("delete person: received id {}", id);
-		CarOwner person = owners.remove(id);
-		if (person == null) {
-			throw new NotFoundException(String.format("person %d doesn't exists", id));
+		try {
+			writeLock.lock();
+			log.debug("delete person: received id {}", id);
+			CarOwner person = owners.remove(id);
+			if (person == null) {
+				throw new NotFoundException(String.format("person %d doesn't exists", id));
+			}
+			List<Car> cars = person.getCars();
+			cars.forEach(c -> c.setOwner(null));
+			return person.build();
+		} finally {
+			writeLock.unlock();
 		}
-		List<Car> cars = person.getCars();
-		cars.forEach(c -> c.setOwner(null));
-		return person.build();
 	}
 
 	@Override
 	public CarDto deleteCar(String carNumber) {
-		log.debug("delete car: received car number {}", carNumber);
-		Car car = cars.remove(carNumber);
-		if (car == null) {
-			throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
+		try {
+			writeLock.lock();
+			log.debug("delete car: received car number {}", carNumber);
+			Car car = cars.remove(carNumber);
+			if (car == null) {
+				throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
+			}
+			CarOwner owner = car.getOwner();
+			if (owner != null) {
+				owner.getCars().remove(car);
+			}
+			return car.build();
+		} finally {
+			writeLock.unlock();
 		}
-		CarOwner owner = car.getOwner();
-
-		if (owner != null) {
-			owner.getCars().remove(car);
-		}
-
-		return car.build();
 	}
 
 	@Override
 	public TradeDealDto purchase(TradeDealDto tradeDeal) {
-		log.debug("purchase: received car {}, owner {}", tradeDeal.carNumber(), tradeDeal.personId());
-		String carNumber = tradeDeal.carNumber();
-		Car car = cars.get(tradeDeal.carNumber());
-		CarOwner owner = null;
-		if (car == null) {
-			throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
-		}
-		Long personId = tradeDeal.personId();
-		CarOwner oldOwner = car.getOwner();
-		checkSameOwner(personId, oldOwner);
-		if (personId != null) {
-			log.debug("new owner {}", personId);
-			owner = owners.get(personId);
-			if (owner == null) {
-				throw new NotFoundException(String.format("person %d doesn't exists", personId));
+		try {
+			writeLock.lock();
+			log.debug("purchase: received car {}, owner {}", tradeDeal.carNumber(), tradeDeal.personId());
+			String carNumber = tradeDeal.carNumber();
+			Car car = cars.get(tradeDeal.carNumber());
+			CarOwner owner = null;
+			if (car == null) {
+				throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
 			}
-			owner.getCars().add(car);
+			Long personId = tradeDeal.personId();
+			CarOwner oldOwner = car.getOwner();
+			checkSameOwner(personId, oldOwner);
+			if (personId != null) {
+				log.debug("new owner {}", personId);
+				owner = owners.get(personId);
+				if (owner == null) {
+					throw new NotFoundException(String.format("person %d doesn't exists", personId));
+				}
+				owner.getCars().add(car);
+			}
+			log.debug("no new owner");
+			if (oldOwner != null) {
+				oldOwner.getCars().remove(car);
+			}
+			car.setOwner(owner);
+			carsModelDealStatistic.merge(car.getModel(), 1, Integer::sum);
+			log.trace("add 1pcs to same model, size of hashMap: {}", carsModelDealStatistic.size());
+			return tradeDeal;
+		} finally {
+			writeLock.unlock();
 		}
-		log.debug("no new owner");
-		if (oldOwner != null) {
-			oldOwner.getCars().remove(car);
-		}
-
-		car.setOwner(owner);
-
-		carsModelDealStatistic.merge(car.getModel(), 1, Integer::sum);
-		log.trace("add 1pcs to same model, size of hashMap: {}", carsModelDealStatistic.size());
-		return tradeDeal;
 	}
 
 	private void checkSameOwner(Long personId, CarOwner oldOwner) {
@@ -127,67 +158,81 @@ public class CarsServiceImpl implements CarsService {
 
 	@Override
 	public List<CarDto> getOwnerCars(long id) {
-		log.debug("get  owner cars: received id {}", id);
-		CarOwner res = owners.get(id);
-		if (res == null) {
-			throw new NotFoundException(String.format("person %d doesn't exists", id));
+		try {
+			readLock.lock();
+			log.debug("get  owner cars: received id {}", id);
+			CarOwner res = owners.get(id);
+			if (res == null) {
+				throw new NotFoundException(String.format("person %d doesn't exists", id));
+			}
+			return res.getCars().stream().map(Car::build).toList();
+		} finally {
+			readLock.unlock();
 		}
-		return res.getCars().stream().map(Car::build).toList();
 
 	}
 
 	@Override
 	public PersonDto getCarOwner(String carNumber) {
-		log.debug("get car owner: received car number {}", carNumber);
-		Car car = cars.get(carNumber);
-		if (car == null) {
-			throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
+		try {
+			readLock.lock();
+			log.debug("get car owner: received car number {}", carNumber);
+			Car car = cars.get(carNumber);
+			if (car == null) {
+				throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
+			}
+			CarOwner owner = car.getOwner();
+			return owner == null ? null : owner.build();
+		} finally {
+			readLock.unlock();
 		}
-		CarOwner owner = car.getOwner();
-		return owner == null ? null : owner.build();
 	}
 
 	@Override
 	public List<String> mostPopularModels() {
-		log.debug("mostPopularModels method call");
-
-		if (carsModelDealStatistic.isEmpty()) {
-			throw new NotFoundException(String.format("No car's records"));
+		try {
+			readLock.lock();
+			log.debug("mostPopularModels method call");
+			if (carsModelDealStatistic.isEmpty()) {
+				throw new NotFoundException(String.format("No car's records"));
+			}
+			int maxAmount = Collections.max(carsModelDealStatistic.values());
+			log.trace("map of amounts {}", carsModelDealStatistic);
+			log.debug("maximal amount of purchases is {}", maxAmount);
+			return carsModelDealStatistic.entrySet().stream().filter(e -> e.getValue() == maxAmount)
+					.map(e -> e.getKey()).toList();
+		} finally {
+			readLock.unlock();
 		}
-
-		int maxAmount = Collections.max(carsModelDealStatistic.values());
-		log.trace("map of amounts {}", carsModelDealStatistic);
-		log.debug("maximal amount of purchases is {}", maxAmount);
-		return carsModelDealStatistic.entrySet().stream().filter(e -> e.getValue() == maxAmount).map(e -> e.getKey())
-				.toList();
 	}
 
 	public List<String> my_mostPopularModels() {
-		log.debug("mostPopularModels method call");
-
-		if (carsModelDealStatistic.isEmpty()) {
-			throw new NotFoundException(String.format("No car's records"));
-		}
-
-		ArrayList<Entry<String, Integer>> list = new ArrayList<>(carsModelDealStatistic.size());
-		list.add(Map.entry("", 0));
-
-		for (Entry<String, Integer> e : carsModelDealStatistic.entrySet()) {
-
-			int newValue = e.getValue();
-
-			if (newValue == list.get(0).getValue()) {
-				list.add(e);
+		try {
+			readLock.lock();
+			log.debug("mostPopularModels method call");
+			if (carsModelDealStatistic.isEmpty()) {
+				throw new NotFoundException(String.format("No car's records"));
 			}
+			ArrayList<Entry<String, Integer>> list = new ArrayList<>(carsModelDealStatistic.size());
+			list.add(Map.entry("", 0));
+			for (Entry<String, Integer> e : carsModelDealStatistic.entrySet()) {
 
-			if (newValue > list.get(0).getValue()) {
-				list.clear();
-				list.add(e);
+				int newValue = e.getValue();
+
+				if (newValue == list.get(0).getValue()) {
+					list.add(e);
+				}
+
+				if (newValue > list.get(0).getValue()) {
+					list.clear();
+					list.add(e);
+				}
+
 			}
-
+			return list.stream().map(e -> e.getKey()).toList();
+		} finally {
+			readLock.unlock();
 		}
-
-		return list.stream().map(e -> e.getKey()).toList();
 	}
 
 }
