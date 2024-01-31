@@ -2,7 +2,6 @@ package telran.cars.service;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,7 @@ import telran.cars.service.model.*;
 public class CarsServiceImpl implements CarsService {
 	HashMap<Long, CarOwner> owners = new HashMap<>();
 	HashMap<String, Car> cars = new HashMap<>();
-	HashMap<String, Integer> carsModelPopularity = new HashMap<>();
+	HashMap<String, Integer> carsModelDealStatistic = new HashMap<>();
 
 	@Override
 	public PersonDto addPerson(PersonDto personDto) {
@@ -48,7 +47,9 @@ public class CarsServiceImpl implements CarsService {
 		log.debug("update person: received personDto {}", personDto);
 		long id = personDto.id();
 		CarOwner res = owners.computeIfPresent(id, (k, co) -> {
+			log.debug("person {}, old mail - {}, new mail - {}", id, co.getEmail(), personDto.email());
 			co.setEmail(personDto.email());
+
 			return co;
 		});
 		if (res == null) {
@@ -98,22 +99,22 @@ public class CarsServiceImpl implements CarsService {
 		CarOwner oldOwner = car.getOwner();
 		checkSameOwner(personId, oldOwner);
 		if (personId != null) {
-			log.debug("new owner exists");
+			log.debug("new owner {}", personId);
 			owner = owners.get(personId);
 			if (owner == null) {
 				throw new NotFoundException(String.format("person %d doesn't exists", personId));
 			}
 			owner.getCars().add(car);
 		}
-
+		log.debug("no new owner");
 		if (oldOwner != null) {
 			oldOwner.getCars().remove(car);
 		}
 
 		car.setOwner(owner);
 
-		carsModelPopularity.merge(car.getModel(), 1, Integer::sum);
-		log.debug("add 1pcs to same model, size of hashMap: {}", carsModelPopularity.size());
+		carsModelDealStatistic.merge(car.getModel(), 1, Integer::sum);
+		log.trace("add 1pcs to same model, size of hashMap: {}", carsModelDealStatistic.size());
 		return tradeDeal;
 	}
 
@@ -149,14 +150,29 @@ public class CarsServiceImpl implements CarsService {
 	@Override
 	public List<String> mostPopularModels() {
 		log.debug("mostPopularModels method call");
-		if (carsModelPopularity.isEmpty()) {
+
+		if (carsModelDealStatistic.isEmpty()) {
 			throw new NotFoundException(String.format("No car's records"));
 		}
 
-		ArrayList<Entry<String, Integer>> list = new ArrayList<>(carsModelPopularity.size());
+		int maxAmount = Collections.max(carsModelDealStatistic.values());
+		log.trace("map of amounts {}", carsModelDealStatistic);
+		log.debug("maximal amount of purchases is {}", maxAmount);
+		return carsModelDealStatistic.entrySet().stream().filter(e -> e.getValue() == maxAmount).map(e -> e.getKey())
+				.toList();
+	}
+
+	public List<String> my_mostPopularModels() {
+		log.debug("mostPopularModels method call");
+
+		if (carsModelDealStatistic.isEmpty()) {
+			throw new NotFoundException(String.format("No car's records"));
+		}
+
+		ArrayList<Entry<String, Integer>> list = new ArrayList<>(carsModelDealStatistic.size());
 		list.add(Map.entry("", 0));
 
-		for (Entry<String, Integer> e : carsModelPopularity.entrySet()) {
+		for (Entry<String, Integer> e : carsModelDealStatistic.entrySet()) {
 
 			int newValue = e.getValue();
 

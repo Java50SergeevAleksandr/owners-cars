@@ -2,6 +2,8 @@ package telran.cars;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
+
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -177,7 +179,12 @@ class CarsServiceTest {
 		carsService.purchase(new TradeDealDto("123", PERSON_ID_1));
 		carsService.purchase(new TradeDealDto("124", PERSON_ID_1));
 		carsService.purchase(new TradeDealDto("125", PERSON_ID_1));
-		assertEquals(List.of(MODEL, MODEL1), carsService.mostPopularModels());
+
+		List<String> mostPopularModels = carsService.mostPopularModels();
+		String[] actual = mostPopularModels.toArray(String[]::new);
+		Arrays.sort(actual);
+		String[] expected = { MODEL, MODEL1 };
+		assertArrayEquals(expected, actual);
 	}
 
 	@Test
@@ -185,4 +192,5 @@ class CarsServiceTest {
 		carsService = ctx.getBean("carsService", CarsService.class);
 		assertThrowsExactly(NotFoundException.class, () -> carsService.mostPopularModels());
 	}
+
 }
