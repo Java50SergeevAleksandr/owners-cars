@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,8 +153,29 @@ class CarsControllerTest {
 		assertEquals(jsonExpected, actualJSON);
 	}
 
+	@Test
+	void GetMostPopularModels_success() throws Exception {
+		List<String> list = List.of("model1");
+		String jsonExpected = mapper.writeValueAsString(list);
+		when(carsService.mostPopularModels()).thenReturn(list);
+		String responseJSON = mockMvc.perform(get("http://localhost:8080/cars/models")).andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+		assertEquals(jsonExpected, responseJSON);
+
+	}
+
 	/******************************************************************/
 	/*********** ALternative flows - Service Exceptions Handling *************/
+	@Test
+	void GetMostPopularModels_NotFound() throws Exception {
+		when(carsService.mostPopularModels()).thenThrow(new NotFoundException(CAR_NOT_FOUND_MESSAGE));
+
+		String response = mockMvc.perform(get("http://localhost:8080/cars/models"))
+				.andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString();
+		assertEquals(CAR_NOT_FOUND_MESSAGE, response);
+
+	}
+
 	@Test
 	void testDeletePersonNotFound() throws Exception {
 		when(carsService.deletePerson(PERSON_ID)).thenThrow(new NotFoundException(PERSON_NOT_FOUND_MESSAGE));

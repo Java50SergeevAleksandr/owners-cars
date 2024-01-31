@@ -73,7 +73,12 @@ public class CarsServiceImpl implements CarsService {
 		if (car == null) {
 			throw new NotFoundException(String.format("car %s doesn't exists", carNumber));
 		}
-		car.getOwner().getCars().remove(car);
+		CarOwner owner = car.getOwner();
+
+		if (owner != null) {
+			owner.getCars().remove(car);
+		}
+
 		return car.build();
 	}
 

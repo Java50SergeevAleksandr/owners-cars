@@ -78,7 +78,7 @@ public class CarsController {
 		return carsService.getCarOwner(carNumber);
 	}
 
-	@GetMapping("cars/models")
+	@GetMapping("models")
 	List<String> getPopularModels() {
 		log.debug("getPopularModels: query");
 		return carsService.mostPopularModels();
