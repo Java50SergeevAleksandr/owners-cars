@@ -38,8 +38,10 @@ class CarsServiceTest {
 	PersonDto personDto1 = new PersonDto(PERSON_ID_1, NAME1, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto1Updated = new PersonDto(PERSON_ID_1, NAME2, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto2 = new PersonDto(PERSON_ID_2, NAME2, BIRTH_DATE_2, EMAIL2);
+	
 	@Autowired
 	ApplicationContext ctx;
+	
 	CarsService carsService;
 
 	@BeforeEach
