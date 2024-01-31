@@ -2,7 +2,6 @@ package telran.cars;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,10 +37,10 @@ class CarsServiceTest {
 	PersonDto personDto1 = new PersonDto(PERSON_ID_1, NAME1, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto1Updated = new PersonDto(PERSON_ID_1, NAME2, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto2 = new PersonDto(PERSON_ID_2, NAME2, BIRTH_DATE_2, EMAIL2);
-	
+
 	@Autowired
 	ApplicationContext ctx;
-	
+
 	CarsService carsService;
 
 	@BeforeEach
@@ -102,6 +101,12 @@ class CarsServiceTest {
 		assertEquals(car1, carsService.deleteCar(CAR_NUMBER_1));
 		assertThrowsExactly(NotFoundException.class, () -> carsService.deleteCar(CAR_NUMBER_1));
 		assertFalse(carsService.getOwnerCars(id).contains(car1));
+	}
+
+	@Test
+	void DeleteCar_withoutOwner_succes() {
+		carsService.addCar(car);
+		assertEquals(car, carsService.deleteCar(CAR_NUMBER));
 	}
 
 	@Test
