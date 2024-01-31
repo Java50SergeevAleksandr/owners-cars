@@ -1,6 +1,8 @@
 package telran.cars.service;
 
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import telran.cars.service.model.*;
 public class CarsServiceImpl implements CarsService {
 	HashMap<Long, CarOwner> owners = new HashMap<>();
 	HashMap<String, Car> cars = new HashMap<>();
+	HashMap<String, Integer> carsModelPopularity = new HashMap<>();
 
 	@Override
 	public PersonDto addPerson(PersonDto personDto) {
@@ -108,6 +111,9 @@ public class CarsServiceImpl implements CarsService {
 		}
 
 		car.setOwner(owner);
+
+		carsModelPopularity.merge(car.getModel(), 1, Integer::sum);
+		log.debug("add 1pcs to same model, size of hashMap: {}", carsModelPopularity.size());
 		return tradeDeal;
 	}
 
@@ -142,8 +148,30 @@ public class CarsServiceImpl implements CarsService {
 
 	@Override
 	public List<String> mostPopularModels() {
-		// TODO Auto-generated method stub
-		return null;
+		log.debug("mostPopularModels method call");
+		if (carsModelPopularity.isEmpty()) {
+			throw new NotFoundException(String.format("No car's records"));
+		}
+
+		ArrayList<Entry<String, Integer>> list = new ArrayList<>(carsModelPopularity.size());
+		list.add(Map.entry("", 0));
+
+		for (Entry<String, Integer> e : carsModelPopularity.entrySet()) {
+
+			int newValue = e.getValue();
+
+			if (newValue == list.get(0).getValue()) {
+				list.add(e);
+			}
+
+			if (newValue > list.get(0).getValue()) {
+				list.clear();
+				list.add(e);
+			}
+
+		}
+
+		return list.stream().map(e -> e.getKey()).toList();
 	}
 
 }

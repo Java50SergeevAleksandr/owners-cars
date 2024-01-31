@@ -16,7 +16,9 @@ import telran.cars.service.CarsService;
 
 @SpringBootTest
 class CarsServiceTest {
-	private static final String MODEL = "model";
+	private static final String MODEL = "tesla";
+	private static final String MODEL1 = "toyota";
+	private static final String MODEL2 = "honda";
 	private static final String CAR_NUMBER = "101-10-101";
 	private static final String CAR_NUMBER_1 = "111-11-111";
 	private static final String CAR_NUMBER_2 = "222-22-222";
@@ -37,10 +39,10 @@ class CarsServiceTest {
 	PersonDto personDto1 = new PersonDto(PERSON_ID_1, NAME1, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto1Updated = new PersonDto(PERSON_ID_1, NAME2, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto2 = new PersonDto(PERSON_ID_2, NAME2, BIRTH_DATE_2, EMAIL2);
-	
+
 	@Autowired
 	ApplicationContext ctx;
-	
+
 	CarsService carsService;
 
 	@BeforeEach
@@ -161,4 +163,26 @@ class CarsServiceTest {
 		assertThrowsExactly(NotFoundException.class, () -> carsService.getCarOwner(CAR_NUMBER));
 	}
 
+	@Test
+	void getMostPopularModels_preset_success() {
+		assertEquals(List.of(MODEL), carsService.mostPopularModels());
+	}
+
+	@Test
+	void getMostPopularModels_manyModels_success() {
+		carsService.addCar(new CarDto("123", MODEL1));
+		carsService.addCar(new CarDto("124", MODEL1));
+		carsService.addCar(new CarDto("125", MODEL2));
+
+		carsService.purchase(new TradeDealDto("123", PERSON_ID_1));
+		carsService.purchase(new TradeDealDto("124", PERSON_ID_1));
+		carsService.purchase(new TradeDealDto("125", PERSON_ID_1));
+		assertEquals(List.of(MODEL, MODEL1), carsService.mostPopularModels());
+	}
+
+	@Test
+	void getMostPopularModels_emptyMap_NotFound() {
+		carsService = ctx.getBean("carsService", CarsService.class);
+		assertThrowsExactly(NotFoundException.class, () -> carsService.mostPopularModels());
+	}
 }
