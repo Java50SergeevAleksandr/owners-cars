@@ -77,4 +77,10 @@ public class CarsController {
 		log.debug("getCarOwner: received car number {}", carNumber);
 		return carsService.getCarOwner(carNumber);
 	}
+
+	@GetMapping("cars/models")
+	List<String> getPopularModels() {
+		log.debug("getPopularModels: query");
+		return carsService.mostPopularModels();
+	}
 }

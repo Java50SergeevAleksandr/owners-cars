@@ -20,4 +20,6 @@ public interface CarsService {
 	List<CarDto> getOwnerCars(long id);
 
 	PersonDto getCarOwner(String carNumber);
+
+	List<String> mostPopularModels();
 }
