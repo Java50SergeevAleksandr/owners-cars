@@ -2,23 +2,29 @@ package telran.cars.service.model;
 
 import lombok.Getter;
 import telran.cars.dto.CarDto;
+import telran.cars.dto.CarState;
+import jakarta.persistence.*;
 
+@Entity
 @Getter
+@Table(name = "cars")
 public class Car {
+	@Id
 	String number;
-	String model;
-	CarOwner owner;
 
-	public Car(CarDto carDto) {
-		number = carDto.number();
-		model = carDto.model();
-	}
+	@ManyToOne
+	@JoinColumns({ @JoinColumn(name = "model_name", nullable = false),
+			@JoinColumn(name = "model_year", nullable = false) })
+	Model model;
+	
+	@ManyToOne
+	@JoinColumn(name = "owner_id", nullable = true)
+	CarOwner carOwner;
+	
+	String color;
+	int kilometers;
+	
+	@Enumerated(EnumType.STRING) // value in the table will be a string (by default a number)
+	CarState state;
 
-	public CarDto build() {
-		return new CarDto(number, model);
-	}
-
-	public void setOwner(CarOwner owner) {
-		this.owner = owner;
-	}
 }
