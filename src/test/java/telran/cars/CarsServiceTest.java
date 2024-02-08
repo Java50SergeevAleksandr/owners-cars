@@ -34,9 +34,9 @@ class CarsServiceTest {
 	private static final String BIRTH_DATE_2 = "2000-10-10";
 	private static final String EMAIL2 = "name2@gmail.com";
 	private static final Long PERSON_ID_NOT_EXISTS = 1111111111L;
-	CarDto car = new CarDto(CAR_NUMBER, MODEL);
-	CarDto car1 = new CarDto(CAR_NUMBER_1, MODEL);
-	CarDto car2 = new CarDto(CAR_NUMBER_2, MODEL);
+	CarDto car = new CarDto(CAR_NUMBER, MODEL, 2000, null, null, null);
+	CarDto car1 = new CarDto(CAR_NUMBER_1, MODEL, 2000, null, null, null);
+	CarDto car2 = new CarDto(CAR_NUMBER_2, MODEL, 2000, null, null, null);
 	PersonDto personDto = new PersonDto(PERSON_ID_NOT_EXISTS, NAME1, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto1 = new PersonDto(PERSON_ID_1, NAME1, BIRTH_DATE_1, EMAIL1);
 	PersonDto personDto1Updated = new PersonDto(PERSON_ID_1, NAME2, BIRTH_DATE_1, EMAIL1);
@@ -54,8 +54,8 @@ class CarsServiceTest {
 		carsService.addCar(car2);
 		carsService.addPerson(personDto1);
 		carsService.addPerson(personDto2);
-		carsService.purchase(new TradeDealDto(CAR_NUMBER_1, PERSON_ID_1));
-		carsService.purchase(new TradeDealDto(CAR_NUMBER_2, PERSON_ID_2));
+		carsService.purchase(new TradeDealDto(CAR_NUMBER_1, PERSON_ID_1, null));
+		carsService.purchase(new TradeDealDto(CAR_NUMBER_2, PERSON_ID_2, null));
 
 	}
 
@@ -115,7 +115,7 @@ class CarsServiceTest {
 
 	@Test
 	void Purchase_NewCarOnwer() {
-		TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER_1, PERSON_ID_2);
+		TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER_1, PERSON_ID_2, null);
 		assertEquals(tradeDeal, carsService.purchase(tradeDeal));
 		assertEquals(personDto2, carsService.getCarOwner(CAR_NUMBER_1));
 		assertFalse(carsService.getOwnerCars(PERSON_ID_1).contains(car1));
@@ -125,8 +125,8 @@ class CarsServiceTest {
 
 	@Test
 	void Purchase_NotFound() {
-		TradeDealDto tradeDealCarNotFound = new TradeDealDto(CAR_NUMBER, PERSON_ID_1);
-		TradeDealDto tradeDealOwnerNotFound = new TradeDealDto(CAR_NUMBER_1, PERSON_ID_NOT_EXISTS);
+		TradeDealDto tradeDealCarNotFound = new TradeDealDto(CAR_NUMBER, PERSON_ID_1, null);
+		TradeDealDto tradeDealOwnerNotFound = new TradeDealDto(CAR_NUMBER_1, PERSON_ID_NOT_EXISTS, null);
 		assertThrowsExactly(NotFoundException.class, () -> carsService.purchase(tradeDealOwnerNotFound));
 		assertThrowsExactly(NotFoundException.class, () -> carsService.purchase(tradeDealCarNotFound));
 
@@ -134,7 +134,7 @@ class CarsServiceTest {
 
 	@Test
 	void Purchase_NoCarOwner() {
-		TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER_1, null);
+		TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER_1, null, null);
 		assertEquals(tradeDeal, carsService.purchase(tradeDeal));
 		assertFalse(carsService.getOwnerCars(PERSON_ID_1).contains(car1));
 		assertNull(carsService.getCarOwner(CAR_NUMBER_1));
@@ -142,7 +142,7 @@ class CarsServiceTest {
 
 	@Test
 	void Purchase_SameOwner() {
-		TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER_1, PERSON_ID_1);
+		TradeDealDto tradeDeal = new TradeDealDto(CAR_NUMBER_1, PERSON_ID_1, null);
 		assertThrowsExactly(IllegalStateException.class, () -> carsService.purchase(tradeDeal));
 	}
 
@@ -153,7 +153,7 @@ class CarsServiceTest {
 		assertArrayEquals(expected, actual);
 
 		Object expected1[] = { car1, car2 };
-		carsService.purchase(new TradeDealDto(CAR_NUMBER_2, PERSON_ID_1));
+		carsService.purchase(new TradeDealDto(CAR_NUMBER_2, PERSON_ID_1, null));
 		Object actual1[] = carsService.getOwnerCars(PERSON_ID_1).toArray();
 		assertArrayEquals(expected1, actual1);
 		assertThrowsExactly(NotFoundException.class, () -> carsService.getOwnerCars(PERSON_ID_NOT_EXISTS));
@@ -172,13 +172,13 @@ class CarsServiceTest {
 
 	@Test
 	void getMostPopularModels_manyModels_success() {
-		carsService.addCar(new CarDto("123", MODEL1));
-		carsService.addCar(new CarDto("124", MODEL1));
-		carsService.addCar(new CarDto("125", MODEL2));
+		carsService.addCar(new CarDto("123", MODEL1, 2000, null, null, null));
+		carsService.addCar(new CarDto("124", MODEL1, 2000, null, null, null));
+		carsService.addCar(new CarDto("125", MODEL2, 2000, null, null, null));
 
-		carsService.purchase(new TradeDealDto("123", PERSON_ID_1));
-		carsService.purchase(new TradeDealDto("124", PERSON_ID_1));
-		carsService.purchase(new TradeDealDto("125", PERSON_ID_1));
+		carsService.purchase(new TradeDealDto("123", PERSON_ID_1, null));
+		carsService.purchase(new TradeDealDto("124", PERSON_ID_1, null));
+		carsService.purchase(new TradeDealDto("125", PERSON_ID_1, null));
 
 		List<String> mostPopularModels = carsService.mostPopularModels();
 		String[] actual = mostPopularModels.toArray(String[]::new);
