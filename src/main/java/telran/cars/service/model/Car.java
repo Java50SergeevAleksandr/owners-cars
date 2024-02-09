@@ -36,6 +36,7 @@ public class Car {
 	CarState state;
 
 	private Car(String number, String color, Integer kilometers, CarState state) {
+		
 		this.number = number;
 		this.color = color;
 		this.kilometers = kilometers;

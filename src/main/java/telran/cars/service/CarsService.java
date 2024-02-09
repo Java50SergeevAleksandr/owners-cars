@@ -15,6 +15,8 @@ public interface CarsService {
 
 	CarDto deleteCar(String carNumber);
 
+	ModelDto addModel(ModelDto modelDto);
+
 	TradeDealDto purchase(TradeDealDto tradeDeal);
 
 	List<CarDto> getOwnerCars(long id);
