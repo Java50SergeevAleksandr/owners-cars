@@ -157,7 +157,7 @@ class CarsControllerTest {
 	void GetMostPopularModels_success() throws Exception {
 		List<String> list = List.of("model1");
 		String jsonExpected = mapper.writeValueAsString(list);
-		when(carsService.mostPopularModels()).thenReturn(list);
+		when(carsService.mostSoldModelNames()).thenReturn(list);
 		String responseJSON = mockMvc.perform(get("http://localhost:8080/cars/models")).andExpect(status().isOk())
 				.andReturn().getResponse().getContentAsString();
 		assertEquals(jsonExpected, responseJSON);
@@ -168,7 +168,7 @@ class CarsControllerTest {
 	/*********** ALternative flows - Service Exceptions Handling *************/
 	@Test
 	void GetMostPopularModels_NotFound() throws Exception {
-		when(carsService.mostPopularModels()).thenThrow(new NotFoundException(CAR_NOT_FOUND_MESSAGE));
+		when(carsService.mostSoldModelNames()).thenThrow(new NotFoundException(CAR_NOT_FOUND_MESSAGE));
 
 		String response = mockMvc.perform(get("http://localhost:8080/cars/models")).andExpect(status().isNotFound())
 				.andReturn().getResponse().getContentAsString();

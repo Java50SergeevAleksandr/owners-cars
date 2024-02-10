@@ -111,22 +111,77 @@ public class CarsServiceImpl implements CarsService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<CarDto> getOwnerCars(long id) {
-		// Not Implemented yet
-		return null;
+		List<Car> cars = carRepo.findByCarOwnerId(id);
+		if (cars.isEmpty()) {
+			log.warn("person with id {} has no cars", id);
+		} else {
+			log.debug("person with id {} has {} cars {}", id, cars.size());
+		}
+		return cars.stream().map(Car::build).toList();
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public PersonDto getCarOwner(String carNumber) {
-		// Not Implemented yet
+		Car car = carRepo.findById(carNumber).orElseThrow(() -> new CarNotFoundException());
+		CarOwner carOwner = car.getCarOwner();
+		return carOwner != null ? carOwner.build() : null;
+	}
+
+	@Override
+	public List<String> mostSoldModelNames() {
+		List<String> res = modelRepo.findMostSoldModelNames();
+		log.trace("most sold model names are {}", res);
+
+		return res;
+	}
+
+	@Override
+	public List<ModelNameAmount> mostPopularModelNames(int nModels) {
+		List<ModelNameAmount> res = modelRepo.findMostPopularModelNames(nModels);
+		res.forEach(mn -> log.debug("model name is {}, number of cars {}", mn.getName(), mn.getAmount()));
+		return res;
+	}
+
+	@Override
+	/**
+	 * returns count of trade deals for a given 'modelName' at a given year / month
+	 * Try to apply only interface method name without @Query annotation
+	 */
+	public long countTradeDealAtMonthModel(String modelName, int month, int year) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	/**
+	 * returns list of a given number of most popular (most cars amount) model names
+	 * and appropriate amounts of the cars, owners of which have an age in a given
+	 * range
+	 */
+	public List<ModelNameAmount> mostPopularModelNameByOwnerAges(int nModels, int ageFrom, int ageTo) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public List<String> mostPopularModels() {
-		// Not Implemented yet
-
+	/**
+	 * returns one most popular color of a given model
+	 */
+	public String oneMostPopularColorModel(String model) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
+	@Override
+	/**
+	 * returns minimal values of engine power and capacity of car owners having an
+	 * age in a given range
+	 */
+	public EnginePowerCapacity minEnginePowerCapacityByOwnerAges(int ageFrom, int ageTo) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

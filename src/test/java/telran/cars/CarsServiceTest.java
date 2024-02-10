@@ -172,55 +172,61 @@ class CarsServiceTest {
 		assertThrowsExactly(TradeDealIllegalStateException.class, () -> carsService.purchase(tradeDealNoOwners));
 	}
 
+	
 	@Test
-	@Disabled
+	/**
+	 * test of the method getOwnerCars the method has been written at CW #64
+	 */
 	void testGetOwnerCars() {
-		Object actual[] = carsService.getOwnerCars(PERSON_ID_1).toArray();
-		Object expected[] = { car1 };
-		assertArrayEquals(expected, actual);
-
-		Object expected1[] = { car1, car2 };
-		carsService.purchase(new TradeDealDto(CAR_NUMBER_2, PERSON_ID_1, null));
-		Object actual1[] = carsService.getOwnerCars(PERSON_ID_1).toArray();
-		assertArrayEquals(expected1, actual1);
-		assertThrowsExactly(NotFoundException.class, () -> carsService.getOwnerCars(PERSON_ID_NOT_EXISTS));
+		// TODO
 	}
 
 	@Test
-	@Disabled
+	/**
+	 * test of the method getCarOwner the method has been written at CW #64
+	 */
 	void testGetCarOwner() {
-		assertEquals(personDto1, carsService.getCarOwner(CAR_NUMBER_1));
-		assertThrowsExactly(NotFoundException.class, () -> carsService.getCarOwner(CAR_NUMBER_1));
+		// TODO
 	}
 
 	@Test
-	@Disabled
-	void getMostPopularModels_preset_success() {
-		assertEquals(List.of(MODEL1), carsService.mostPopularModels());
+	/**
+	 * test of the method mostSoldModelNames the method has been written at CW #64
+	 */
+	void testMostSoldModelNames() {
+		// TODO
+
 	}
 
 	@Test
-	@Disabled
-	void getMostPopularModels_manyModels_success() {
-		carsService.addCar(new CarDto("123", MODEL2, 2000, null, null, null));
-		carsService.addCar(new CarDto("124", MODEL2, 2000, null, null, null));
-		carsService.addCar(new CarDto("125", MODEL3, 2000, null, null, null));
+	/**
+	 * test of the method mostPopularModelNames the method has been written at CW
+	 * #64
+	 */
+	void testMostPopularModelNames() {
+		// TODO
+		carsService.mostPopularModelNames(2);
+	}
 
-		carsService.purchase(new TradeDealDto("123", PERSON_ID_1, null));
-		carsService.purchase(new TradeDealDto("124", PERSON_ID_1, null));
-		carsService.purchase(new TradeDealDto("125", PERSON_ID_1, null));
-
-		List<String> mostPopularModels = carsService.mostPopularModels();
-		String[] actual = mostPopularModels.toArray(String[]::new);
-		Arrays.sort(actual);
-		String[] expected = { MODEL1, MODEL2 };
-		assertArrayEquals(expected, actual);
+	// tests for the methods of the HW #64
+	@Test
+	void testCountTradeDealAtMonthModel() {
+		// TODO
 	}
 
 	@Test
-	@Disabled
-	void getMostPopularModels_emptyMap_NotFound() {
+	void testMostPopularModelNameByOwnerAges() {
+		// TODO
+	}
 
+	@Test
+	void testOneMostPopularColorModel() {
+		// TODO
+	}
+
+	@Test
+	void testMinEnginePowerCapacityByOwnerAges() {
+		// TODO
 	}
 
 }
