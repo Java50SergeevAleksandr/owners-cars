@@ -72,10 +72,6 @@ public class CarsServiceImpl implements CarsService {
 	@Transactional
 	public PersonDto deletePerson(long id) {
 		CarOwner carOwner = carOwnerRepo.findById(id).orElseThrow(() -> new PersonNotFoundException());
-		List<Car> carsForNulling = carRepo.findByCarOwnerId(id);
-		carsForNulling.forEach(c -> c.setCarOwner(null));
-		List<TradeDeal> dealsForOwnerNulling = tradeDealRepo.findByCarOwnerId(id);
-		dealsForOwnerNulling.forEach(d -> d.setCarOwner(null));
 		carOwnerRepo.deleteById(id);
 		return carOwner.build();
 	}
@@ -84,8 +80,6 @@ public class CarsServiceImpl implements CarsService {
 	@Transactional
 	public CarDto deleteCar(String carNumber) {
 		Car car = carRepo.findById(carNumber).orElseThrow(() -> new CarNotFoundException());
-		List<TradeDeal> listOfDeals = tradeDealRepo.findByCarNumber(carNumber);
-		tradeDealRepo.deleteAll(listOfDeals);
 		carRepo.deleteById(carNumber);
 		return car.build();
 	}
