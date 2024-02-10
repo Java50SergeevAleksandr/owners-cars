@@ -1,6 +1,7 @@
 package telran.cars.service.model;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import telran.cars.dto.CarDto;
 import telran.cars.dto.CarState;
@@ -8,7 +9,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Getter
-
+@NoArgsConstructor
 @Table(name = "cars")
 public class Car {
 	@Id
@@ -36,7 +37,7 @@ public class Car {
 	CarState state;
 
 	private Car(String number, String color, Integer kilometers, CarState state) {
-		
+
 		this.number = number;
 		this.color = color;
 		this.kilometers = kilometers;

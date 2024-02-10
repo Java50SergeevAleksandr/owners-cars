@@ -50,6 +50,17 @@ public class CarsServiceImpl implements CarsService {
 	}
 
 	@Override
+	public ModelDto addModel(ModelDto modelDto) {
+		if (modelRepo.existsById(new ModelYear(modelDto.modelName(), modelDto.modelYear()))) {
+			throw new IllegalModelsStateException();
+		}
+		Model model = Model.of(modelDto);
+		modelRepo.save(model);
+		log.debug("model {} has been saved", modelDto);
+		return modelDto;
+	}
+
+	@Override
 	@Transactional
 	public PersonDto updatePerson(PersonDto personDto) {
 		CarOwner carOwner = carOwnerRepo.findById(personDto.id()).orElseThrow(() -> new PersonNotFoundException());
@@ -60,50 +71,49 @@ public class CarsServiceImpl implements CarsService {
 	@Override
 	@Transactional
 	public PersonDto deletePerson(long id) {
-
-		// TODO
-		// HW #63
-		// find Car having being deleted owner
-		// If such car exists, set null as the car owner
-		// after that delete by the method deleteById from carOwnerRepo
-		return null;
+		CarOwner carOwner = carOwnerRepo.findById(id).orElseThrow(() -> new PersonNotFoundException());
+		List<Car> carsForNulling = carRepo.findByCarOwnerId(id);
+		carsForNulling.forEach(c -> c.setCarOwner(null));
+		List<TradeDeal> dealsForOwnerNulling = tradeDealRepo.findByCarOwnerId(id);
+		dealsForOwnerNulling.forEach(d -> d.setCarOwner(null));
+		carOwnerRepo.deleteById(id);
+		return carOwner.build();
 	}
 
 	@Override
+	@Transactional
 	public CarDto deleteCar(String carNumber) {
-		// TODO
-		// HW #63
-		// find all TradeDeal entities for a given Car
-		// delete all such entities
-		// delete by the method deleteById from CarRepo
-		return null;
+		Car car = carRepo.findById(carNumber).orElseThrow(() -> new CarNotFoundException());
+		List<TradeDeal> listOfDeals = tradeDealRepo.findByCarNumber(carNumber);
+		tradeDealRepo.deleteAll(listOfDeals);
+		carRepo.deleteById(carNumber);
+		return car.build();
 	}
 
 	@Override
+	@Transactional
 	public TradeDealDto purchase(TradeDealDto tradeDealDto) {
 		Car car = carRepo.findById(tradeDealDto.carNumber()).orElseThrow(() -> new CarNotFoundException());
-		CarOwner carOwner = null;
+		CarOwner oldCarOwner = car.getCarOwner();
+		CarOwner newCarOwner = null;
 		Long personId = tradeDealDto.personId();
-		if (personId == null) {
-			throw new TradeDealIllegalStateException();
-		} else {
-			carOwner = carOwnerRepo.findById(personId).orElseThrow(() -> new PersonNotFoundException());
-			if (car.getCarOwner().getId() == personId) {
+		if (personId != null) {
+			log.debug("ID of new car's owner is {}", personId);
+			newCarOwner = carOwnerRepo.findById(personId).orElseThrow(() -> new PersonNotFoundException());
+			if (oldCarOwner != null && oldCarOwner.getId() == personId) {
 				throw new TradeDealIllegalStateException();
 			}
+		} else if (oldCarOwner == null) {
+			throw new TradeDealIllegalStateException();
 		}
 		TradeDeal tradeDeal = new TradeDeal();
 		tradeDeal.setCar(car);
-		tradeDeal.setCarOwner(carOwner);
+		tradeDeal.setCarOwner(newCarOwner);
 		tradeDeal.setDate(LocalDate.parse(tradeDealDto.date()));
+		car.setCarOwner(newCarOwner);
+		tradeDealRepo.save(tradeDeal);
+		log.debug("trade: {} has been saved", tradeDealDto);
 		return tradeDealDto;
-	}
-
-	@Override
-	public ModelDto addModel(ModelDto modelDto) {
-		// TODO Auto-generated method stub
-		// HW #63 Write the method similar to the method addPerson
-		return null;
 	}
 
 	@Override
