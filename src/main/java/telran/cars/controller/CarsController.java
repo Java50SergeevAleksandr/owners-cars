@@ -81,6 +81,6 @@ public class CarsController {
 	@GetMapping("models")
 	List<String> getPopularModels() {
 		log.debug("getPopularModels: query");
-		return carsService.mostPopularModels();
+		return carsService.mostSoldModelNames();
 	}
 }

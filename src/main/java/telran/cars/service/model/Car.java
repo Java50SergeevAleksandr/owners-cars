@@ -24,6 +24,7 @@ public class Car {
 	@JoinColumns({ @JoinColumn(name = "model_name", nullable = false),
 			@JoinColumn(name = "model_year", nullable = false) })
 	@Setter
+	@OnDelete(action = OnDeleteAction.CASCADE)
 	Model model;
 
 	@ManyToOne
