@@ -278,18 +278,8 @@ class CarsServiceTest {
 	 */
 	@DisplayName(SERVICE_TEST + TestNames.MODEL_NAMES_MOST_POPULAR)
 	void testMostPopularModelNames() {
-		setUpAddInfo();
+		setUpAddInfo();	
 		List<ModelNameAmount> list = carsService.mostPopularModelNames(2);
-		Object[] exp = { MODEL1, 2l, MODEL4, 2l };
-		List<Object> act = new ArrayList<Object>();
-		list.forEach(mn -> {
-			String name = mn.getName();
-			Long am = mn.getAmount();
-			act.add(name);
-			act.add(am);
-		});
-		assertArrayEquals(exp, act.toArray());
-
 		ModelNameAmountTest[] expected = { new ModelNameAmountTest(MODEL1, 2), new ModelNameAmountTest(MODEL4, 2) };
 		modelNameAmountsTest(list, expected);
 

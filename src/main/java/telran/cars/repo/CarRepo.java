@@ -13,8 +13,8 @@ public interface CarRepo extends JpaRepository<Car, String> {
 	List<Car> findByCarOwnerId(long id);
 
 	@Query(value = """
-			select color from cars where model_name = :model
-			group by color order by color(*) decs, color asc limit 1
+			select color from cars where model_name=:model
+			group by color order by count(*) desc, color asc limit 1
 			""", nativeQuery = true)
 	String findOneMostPopularColorModel(String model);
 
