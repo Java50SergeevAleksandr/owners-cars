@@ -83,4 +83,9 @@ public class CarsController {
 		log.debug("getPopularModels: query");
 		return carsService.mostSoldModelNames();
 	}
+
+	@PostMapping("query")
+	List<String> getQueryResult(@RequestBody QueryDto queryDto) {
+		return carsService.anyQuery(queryDto);
+	}
 }

@@ -31,8 +31,8 @@ public class CarsExceptionsController {
 		return returnResponse(e.getMessage(), HttpStatus.NOT_FOUND);
 	}
 
-	@ExceptionHandler(IllegalStateException.class)
-	ResponseEntity<String> illegalStateHandler(IllegalStateException e) {
+	@ExceptionHandler({ IllegalStateException.class, IllegalArgumentException.class })
+	ResponseEntity<String> illegalStateHandler(RuntimeException e) {
 		return returnResponse(e.getMessage(), HttpStatus.BAD_REQUEST);
 	}
 

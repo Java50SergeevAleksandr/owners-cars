@@ -26,6 +26,7 @@ public interface CarsService {
 	List<String> mostSoldModelNames();
 
 	List<ModelNameAmount> mostPopularModelNames(int nModels);// most popular model names according to number of cars
+
 	// Methods of HW #64
 
 	long countTradeDealAtMonthModel(String modelName, int month, int year);
@@ -35,4 +36,7 @@ public interface CarsService {
 	String oneMostPopularColorModel(String model);
 
 	EnginePowerCapacity minEnginePowerCapacityByOwnerAges(int ageFrom, int ageTo);
+
+	// CW #65
+	List<String> anyQuery(QueryDto queryDto);
 }

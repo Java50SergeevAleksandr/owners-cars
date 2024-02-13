@@ -50,6 +50,11 @@ public class Car {
 		this.state = state;
 	}
 
+	@Override
+	public String toString() {
+		return "Car [number=" + number + ", color=" + color + ", kilometers=" + kilometers + ", state=" + state + "]";
+	}
+
 	public static Car of(CarDto carDto) {
 		return new Car(carDto.number(), carDto.color(), carDto.kilometers(), carDto.state());
 	}
