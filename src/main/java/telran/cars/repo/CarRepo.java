@@ -18,9 +18,9 @@ public interface CarRepo extends JpaRepository<Car, String> {
 			""", nativeQuery = false)
 	String findOneMostPopularColorModel(String model);
 
-	@Query(value = """
+	@Query("""
 			select min(car.model.enginePower) as power, min(car.model.engineCapacity) as capacity
 			from Car car where carOwner.birthDate between :birthDateFrom and :birthDateTo
-			""", nativeQuery = true)
+			""")
 	EnginePowerCapacity findMinPowerCapacityOwnerBirthDates(LocalDate birthDateFrom, LocalDate birthDateTo);
 }
